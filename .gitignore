@@ -1,3 +1,4 @@
 vendor/
 keys/
 web-push-php-example/
+composer.lock
