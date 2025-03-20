@@ -15,9 +15,7 @@ require_once("vendor/autoload.php");
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
 
-$webPushAuth = Permission::get_vapid();
-
-$webPush = new WebPush( $webPushAuth );
+$webPush = Permission::get_web_push();
 
 //get POST data
 $title	= htmlspecialchars( $_POST['title'] );
@@ -38,6 +36,10 @@ $payload = "{\"title\": \"$title\", \"body\": \"$body\", \"url\": \"$url\"}";
 //get subscriptions
 $subscriptions = $dbConnection->get_subscriptions();
 
+//count how many notifications get send.
+$countSucessfulPushes = 0;
+$countFailedPushes = 0;
+
 //send notification to all subscribers
 while( ( $sub = $subscriptions -> fetch_assoc() ) ) {
 
@@ -52,11 +54,20 @@ while( ( $sub = $subscriptions -> fetch_assoc() ) ) {
 	if( !$report->isSuccess() && $report->isSubscriptionExpired() ) {
 
 		$dbConnection->disable_subscription( $sub['endpoint'] );
+
+		$countFailedPushes++;
+
+	} else {
+		$countSucessfulPushes++;
 	}
 
 	//insert report into DB
 	$dbConnection->insert_report($sub['endpoint'], $notificationId, $report);
 }
+
+echo <<<EOM
+	{"status": 200, "message": "Notification pushed.", "successful": $countSucessfulPushes, "failed": $countFailedPushes}
+EOM;
 
 /**
  * Build subscription JSON in order to instantiate and return Subscription object
@@ -67,5 +78,3 @@ function prepare_subscription( $sub ) {
 
 	return Subscription::create( json_decode( $subscriptionJSON, true ) );
 }
-
-return json_encode( $_POST );

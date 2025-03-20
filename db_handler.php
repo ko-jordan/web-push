@@ -7,7 +7,7 @@ require_once("permission.php");
 class DBConnection extends \mysqli{
 
 
-	protected DB_CREDENTIALS_URI = './keys/db_credentials.txt';
+	protected const DB_CREDENTIALS_URI = './keys/db_credentials.txt';
 	/**
 	 * Return a mysqli Object with the credentials provided in file
 	 */
