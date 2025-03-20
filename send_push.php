@@ -1,32 +1,71 @@
 <?php
+
+namespace WpWebPush;
+
+ini_set("log_errors", 1);
+ini_set("error_log", "php-error.log");
+
+require_once('permission.php');
+
+Permission::check_authorization();
+
+require_once("db_handler.php");
 require_once("vendor/autoload.php");
 
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
-$auth = [
-	'VAPID' => [
-		'subject' => 'mailto: me@me.me',
-		'publicKey' => file_get_contents('./keys/public_key.txt'),
-		'privateKey' => file_get_contents('./keys/private_key.txt'),
 
+$webPushAuth = Permission::get_vapid();
 
-	]
-];
+$webPush = new WebPush( $webPushAuth );
 
-$webPush = new WebPush( $auth );
+//get POST data
+$title	= htmlspecialchars( $_POST['title'] );
+$body	= htmlspecialchars( $_POST['body'] );
+$url	= htmlspecialchars( $_POST['url'] );
 
-$subscriptionsJSON = [
-		'{"endpoint":"https://wns2-sg2p.notify.windows.com/w/?token=BQYAAADLTanvObQth4Lrl%2bqgSOdlN5epXAXMH9miN2eJpzo8CjKqecpc3E7xu0ktrdPgOYjOcnCE4%2bNtP9bgLPySre%2bJWkj9kBU3zEwkEGfGCDypG7svvwHizK4Q46AAD4jDUjn8xWBy9LQ6CT9alFYzzgxc8rFAlEIoa1Cb8e3zMbcIzpPqZ4EytkIZQkU2%2fwpK2TZ8IKKcW5vqmZwtRV8ug6c1nn2qaLaq6gyEi2CRQh5DRSvSTHmnG8EiCQHuf8mMnd%2foKk9KDOI%2bETNVC3kzca3r4SDZg1cpgbZQgotpXmC1pGqjSR19WCBqpDwocWm6PvA%3d","expirationTime":null,"keys":{"p256dh":"BNtHpnFxO1gcluWgGxqX083B7WcgaeWX08HENDONOFp7kG44WfUuZwq0fVoC1OXArJg0JAh9bBtZ8pr4kyZjfuU","auth":"VOJ7dXGSpSAGx3k2H_1jNA"}}',
-		'{"endpoint":"https://fcm.googleapis.com/fcm/send/dF9iC5i2QUg:APA91bFwF_bC_3AFcZykiHYDNpte7TYj_JHHTPMxr_rPF2CydRg47FVYJS_xcgUZbUQXGMX9PxRQUdOxH491rUU15yvIRTvn7OBs7AQCEwbvCF0Lpj6TTz-Jqtg40ADVfsd8UrZJ1fkf","expirationTime":null,"keys":{"p256dh":"BLA7YzaEh4pPaQMUHegX99chRzdUya4JImQOGc74I-AuQJIrRJZGQ4cz2t4pZndohi7JXFFjL8-f7T73q5XzEn4","auth":"BxAWnatYGOddczw-H-3tDw"}}'
-];
-foreach($subscriptionsJSON as $subscrptionJSON ) {
+$dbConnection = new DBConnection();
 
-	$subscription = Subscription::create( json_decode( $subscrptionJSON, true ) );
+//insert notification into DB
+$notificationId = $dbConnection->insert_notification( $title, $body, $url );
 
-	$payload = '{"title": "hi from PHP", "body": "it\'s working from PHP", "url": "http://localhost/dam2025/"}';
+//throw error if 
+Permission::cancel_if_unsuccessful( $notificationId );
 
-	$resolved = $webPush->sendOneNotification( $subscription, $payload, [ 'TTL' => 100 ] );
+//generate notification payload
+$payload = "{\"title\": \"$title\", \"body\": \"$body\", \"url\": \"$url\"}";
 
-	var_dump( $resolved );
+//get subscriptions
+$subscriptions = $dbConnection->get_subscriptions();
 
+//send notification to all subscribers
+while( ( $sub = $subscriptions -> fetch_assoc() ) ) {
+
+	//get subscription object
+	$subscription = prepare_subscription( $sub );
+
+	//TODO: check notification queuing
+	//send notifications one at a time
+	$report = $webPush->sendOneNotification( $subscription, $payload, [ 'TTL' => 3600 ] );
+
+	//disable all subscriptions that didnt succeed
+	if( !$report->isSuccess() && $report->isSubscriptionExpired() ) {
+
+		$dbConnection->disable_subscription( $sub['endpoint'] );
+	}
+
+	//insert report into DB
+	$dbConnection->insert_report($sub['endpoint'], $notificationId, $report);
 }
+
+/**
+ * Build subscription JSON in order to instantiate and return Subscription object
+ */
+function prepare_subscription( $sub ) {
+
+	$subscriptionJSON = "{\"endpoint\":\"{$sub['endpoint']}\",\"keys\":{$sub['auth_keys']}}";
+
+	return Subscription::create( json_decode( $subscriptionJSON, true ) );
+}
+
+return json_encode( $_POST );
