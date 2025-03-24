@@ -21,11 +21,12 @@ $webPush = Permission::get_web_push();
 $title	= htmlspecialchars( $_POST['title'] );
 $body	= htmlspecialchars( $_POST['body'] );
 $url	= htmlspecialchars( $_POST['url'] );
+$team	= htmlspecialchars( $_POST['team'] ?? '' );
 
 $dbConnection = new DBConnection();
 
 //insert notification into DB
-$notificationId = $dbConnection->insert_notification( $title, $body, $url );
+$notificationId = $dbConnection->insert_notification( $title, $body, $url, $team );
 
 //throw error if 
 Permission::cancel_if_unsuccessful( $notificationId );
@@ -34,7 +35,7 @@ Permission::cancel_if_unsuccessful( $notificationId );
 $payload = "{\"title\": \"$title\", \"body\": \"$body\", \"url\": \"$url\"}";
 
 //get subscriptions
-$subscriptions = $dbConnection->get_subscriptions();
+$subscriptions = $dbConnection->get_subscriptions( $team );
 
 //count how many notifications get send.
 $countSucessfulPushes = 0;
