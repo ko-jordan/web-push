@@ -93,7 +93,7 @@ class Permission {
 		
 		try{
 
-			$vapid = self::get_vapid;
+			$vapid = self::get_vapid();
 
 			return new WebPush( $vapid );
 
