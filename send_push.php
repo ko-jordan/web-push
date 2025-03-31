@@ -1,5 +1,4 @@
 <?php
-
 namespace WpWebPush;
 
 ini_set("log_errors", 1);
@@ -23,7 +22,16 @@ $body	= htmlspecialchars( $_POST['body'] );
 $url	= htmlspecialchars( $_POST['url'] );
 $team	= htmlspecialchars( $_POST['team'] ?? '' );
 
-$dbConnection = new DBConnection();
+/**
+ * Setting global variables
+ */
+//dbConnection
+$dbConnection 			= new DBConnection();
+//id of notification that will be inserted in DB
+$notificationId 		= null;
+//count how many notifications get send.
+$countSucessfulPushes 	= 0;
+$countFailedPushes 		= 0;
 
 //insert notification into DB
 $notificationId = $dbConnection->insert_notification( $title, $body, $url, $team );
@@ -35,36 +43,22 @@ Permission::cancel_if_unsuccessful( $notificationId );
 $payload = "{\"title\": \"$title\", \"body\": \"$body\", \"url\": \"$url\"}";
 
 //get subscriptions
-$subscriptions = $dbConnection->get_subscriptions( $team );
+$subs = $dbConnection->get_subscriptions( $team );
 
-//count how many notifications get send.
-$countSucessfulPushes = 0;
-$countFailedPushes = 0;
 
 //send notification to all subscribers
-while( ( $sub = $subscriptions -> fetch_assoc() ) ) {
+while( ( $sub = $subs -> fetch_assoc() ) ) {
 
 	//get subscription object
 	$subscription = prepare_subscription( $sub );
 
-	//TODO: check notification queuing
-	//send notifications one at a time
-	$report = $webPush->sendOneNotification( $subscription, $payload, [ 'TTL' => 3600 ] );
-
-	//disable all subscriptions that didnt succeed
-	if( !$report->isSuccess() && $report->isSubscriptionExpired() ) {
-
-		$dbConnection->disable_subscription( $sub['endpoint'] );
-
-		$countFailedPushes++;
-
-	} else {
-		$countSucessfulPushes++;
-	}
-
-	//insert report into DB
-	$dbConnection->insert_report($sub['endpoint'], $notificationId, $report);
+	//enqueue for flushing later
+	$report = $webPush->queueNotification( $subscription, $payload );
 }
+
+
+
+$webPush->flushPooled('WpWebPush\prepareReport');
 
 echo <<<EOM
 	{"status": 200, "message": "Notification pushed.", "successful": $countSucessfulPushes, "failed": $countFailedPushes}
@@ -78,4 +72,27 @@ function prepare_subscription( $sub ) {
 	$subscriptionJSON = "{\"endpoint\":\"{$sub['endpoint']}\",\"keys\":{$sub['auth_keys']}}";
 
 	return Subscription::create( json_decode( $subscriptionJSON, true ) );
+}
+
+function prepareReport( $report ) {
+
+	global 	$notificationId, 
+			$countSucessfulPushes, 
+			$countFailedPushes, 
+			$dbConnection;
+
+	//disable all subscriptions that didnt succeed
+	if( !$report->isSuccess() && $report->isSubscriptionExpired() ) {
+
+		$dbConnection->disable_subscription( $report->getEndpoint() );
+
+		$countFailedPushes++;
+
+	} else {
+
+		$countSucessfulPushes++;
+	}
+
+	//insert report into DB
+	$dbConnection->insert_report($report->getEndpoint(), $notificationId, $report);
 }
