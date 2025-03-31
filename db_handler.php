@@ -122,7 +122,7 @@ class DBConnection extends \mysqli{
 
 		$result =  $this->insert('notifications', compact('title', 'body', 'url', 'team') );
 
-		Permission:cancel_if_unsuccessful( $result );
+		Permission::cancel_if_unsuccessful( $result );
 
 		return $result;
 	}
