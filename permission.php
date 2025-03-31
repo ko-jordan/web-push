@@ -95,7 +95,18 @@ class Permission {
 
 			$vapid = self::get_vapid();
 
-			return new WebPush( $vapid );
+			$webPush = new WebPush( $vapid );
+
+			$defaultOptions = [
+			    'TTL' => 86400, // defaults to 4 weeks
+			    'urgency' => 'normal', // protocol defaults to "normal". (very-low, low, normal, or high)
+			    'batchSize' => 100, // defaults to 1000
+			];
+
+			$webPush->setDefaultOptions($defaultOptions);
+			$webPush->setAutomaticPadding(false);
+
+			return $webPush;
 
 		} catch(Exception $err ) {
 
