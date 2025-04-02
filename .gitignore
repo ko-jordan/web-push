@@ -1,5 +1,6 @@
 vendor/
 keys/
+logs/
 web-push-php-example/
 composer.lock
 composer.phar
