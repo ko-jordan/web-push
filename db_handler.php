@@ -69,9 +69,9 @@ class DBConnection extends \mysqli{
 	/**
 	 *  Get all active(!) subscriptions 
 	 */
-	function get_subscriptions( $team =false ) {
+	function get_subscriptions( $team = false ) {
 
-		$condition = empty( $team ) ? "1" : "team = '$team'";
+		$condition = empty( $team ) ? "1" : "team = $team";
 
 		$query = "SELECT * FROM subscriptions WHERE active AND $condition";
 
