@@ -48,7 +48,7 @@ class DBConnection extends \mysqli{
 
 		foreach( ['user', 'password', 'db', 'host'] as $attr ) {
 
-			$regex = '/^'. preg_quote( $attr ) . ':\s+(.*)[$\r]/m';
+			$regex = '/^'. preg_quote( $attr ) . ':\s+(.*)[$\r\n]/m';
 
 			preg_match( $regex, $credentialsContents, $match );
 

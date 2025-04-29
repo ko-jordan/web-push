@@ -33,7 +33,7 @@ class Permission {
 			);
 		}
 
-		$authTokenServer = file_get_contents('./keys/http_auth_bearer.txt');
+		$authTokenServer = trim(file_get_contents('./keys/http_auth_bearer.txt'));
 
 		$allHeaders = getallheaders();
 
@@ -48,7 +48,7 @@ class Permission {
 			
 			self::exit_with_error(
 				403,
-				"auth mismatch. server !== request ($authTokenRequest)",
+				"auth mismatch. server ($authTokenServer) !== request ($authTokenRequest)",
 				"Error Processing the request.",
 				"Access denied!"
 			);
@@ -141,7 +141,7 @@ class Permission {
 			500 => 'Internal Server Error'
 		];
 
-		if( array_key_exists($code, $errors) ) {
+		if( !array_key_exists($code, $errors) ) {
 			$code = 500;
 		}
 

@@ -3,7 +3,8 @@
 namespace WpWebPush;
 
 ini_set("log_errors", 1);
-ini_set("error_log", "php-error.log");
+ini_set("error_log", "logs/php-error.log");
+
 
 require_once('db_handler.php');
 
