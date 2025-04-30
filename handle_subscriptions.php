@@ -29,7 +29,7 @@ switch ($method) {
 
     $success = $dbConnection->insert_subscription( $subscription );
 
-    $message = $success ? "Du bist für Push-Notifications angemeldet!" : "Anmelden hat nicht geklappt..";
+    $message = $success ? "Du bist für Push Nachrichten angemeldet!" : "Anmelden hat nicht geklappt.";
 
     $success = $success ? 'true' : 'false';
 
