@@ -28,7 +28,7 @@ switch ($method) {
 
     $success = $dbConnection->insert_subscription( $subscription );
 
-    $message = $success ? "Subscription created!" : "Subscription could not be created.";
+    $message = $success ? "Du bist für Push-Notifications angemeldet!" : "Anmelden hat nicht geklappt..";
 
     $success = $success ? 'true' : 'false';
 
@@ -39,14 +39,14 @@ EOM;
     case 'PUT':
         // update the key and token of subscription corresponding to the endpoint
         echo <<<EOM
-{"status": 200, "success": true, "message": "Subscription updated!"}
+{"status": 200, "success": true, "message": "Anmeldung aktualisiert!"}
 EOM;
         break;
     case 'DELETE':
         // delete the subscription corresponding to the endpoint
     $success = $dbConnection->disable_subscription( $subscription['endpoint'] );
 
-    $message = $success ? "Subscription deleted!" : "Subscription could not be deleted.";
+    $message = $success ? "Anmeldung gelöscht!" : "Anmeldung konnte nicht gelöscht werden.";
 
     $success = $success ? 'true' : 'false';
 
