@@ -79,7 +79,7 @@ class Permission {
 		
 		return [
 			'VAPID' => [
-				'subject' => 'mailto: moin@kojordan.com',
+				'subject' => 'mailto:moin@kojordan.com',
 				'publicKey' => file_get_contents('./keys/public_key.txt'),
 				'privateKey' => file_get_contents('./keys/private_key.txt')
 			]
