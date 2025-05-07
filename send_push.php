@@ -82,7 +82,7 @@ function prepareReport( $report ) {
 			$dbConnection;
 
 	//disable all subscriptions that didnt succeed
-	if( !$report->isSuccess() && $report->isSubscriptionExpired() ) {
+	if( !$report->isSuccess() ) {
 
 		$dbConnection->disable_subscription( $report->getEndpoint() );
 
