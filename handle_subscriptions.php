@@ -39,14 +39,18 @@ EOM;
         break;
     case 'PUT':
         // update the key and token of subscription corresponding to the endpoint
+    $success = $dbConnection->insert_subscription( $subscription );
+
+    $message = $success ? "Anmeldung aktualisiert!" : "Anmelden konnte nicht aktualisiert werden.";
+
+    $success = $success ? 'true' : 'false';
         echo <<<EOM
-{"status": 200, "success": true, "message": "Anmeldung aktualisiert!"}
+{"status": 200, "success": $success, "message": "Anmeldung aktualisiert!"}
 EOM;
         break;
     case 'DELETE':
         // delete the subscription corresponding to the endpoint
     $success = $dbConnection->disable_subscription( $subscription['endpoint'] );
-
     $message = $success ? "Anmeldung gelöscht!" : "Anmeldung konnte nicht gelöscht werden.";
 
     $success = $success ? 'true' : 'false';
