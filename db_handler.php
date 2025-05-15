@@ -14,12 +14,13 @@ class DBConnection extends \mysqli{
 	function __construct() {
     
 		$credentials = $this -> get_credentials();
+
 		try{
 		    parent::__construct(
-		    	$credentials['host'] ?? '127.0.0.1', 
-		    	$credentials['user'] ?? 'root', 
-		    	$credentials['password'] ?? '', 
-		    	$credentials['db'] ?? 'push_notifications'
+		    	trim( $credentials['host'] ?? '127.0.0.1' ), 
+		    	trim( $credentials['user'] ?? 'root' ), 
+		    	trim( $credentials['password'] ?? '' ), 
+		    	trim( $credentials['db'] ?? 'push_notifications' )
 		    );
 
 		}catch(Exception $e ) {
@@ -48,7 +49,7 @@ class DBConnection extends \mysqli{
 
 		foreach( ['user', 'password', 'db', 'host'] as $attr ) {
 
-			$regex = '/^'. preg_quote( $attr ) . ':\s+(.*)[$\r\n]/m';
+			$regex = '/^'. preg_quote( $attr ) . ':\s+(.*)[\r\n$]+/m';
 
 			preg_match( $regex, $credentialsContents, $match );
 
@@ -69,9 +70,11 @@ class DBConnection extends \mysqli{
 	/**
 	 *  Get all active(!) subscriptions 
 	 */
-	function get_subscriptions( $team = false ) {
+	function get_subscriptions( $team = false, $transfermarkt = false ) {
 
 		$condition = empty( $team ) ? "1" : "team = $team";
+
+		$condition .= empty( $transfermarkt ) ? " AND 1" : " AND transfermarkt";
 
 		$query = "SELECT * FROM subscriptions WHERE active AND $condition";
 
@@ -97,19 +100,17 @@ class DBConnection extends \mysqli{
 
 		$team = $subscription['team'] ?? false;
 
+		$transfermarkt = $subscription['transfermarkt'] ?? false;
+
 		$entry = $this -> get_entry('subscriptions', compact( 'endpoint' ) )->fetch_assoc();
 
 		if( empty( $entry ) ){
 		
-
-			return $this->insert( 'subscriptions', compact( 'endpoint', 'auth_keys', 'team' ) );
+			return $this->insert( 'subscriptions', compact( 'endpoint', 'auth_keys', 'team', 'transfermarkt' ) );
 
 		} else {
 
-			if( $entry['active'] === false ) {
-
-				return $this->update_entry( 'subscriptions', compact( 'endpoint' ), ['active' => 1, 'team' => $team]);
-			}
+			return $this->update_entry( 'subscriptions', compact( 'endpoint' ), ['active' => 1, 'team' => $team, 'transfermarkt' => $transfermarkt]);
 		}
 	}
 

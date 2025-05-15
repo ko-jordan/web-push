@@ -21,6 +21,7 @@ $title	= htmlspecialchars( $_POST['title'] );
 $body	= htmlspecialchars( $_POST['body'] );
 $url	= htmlspecialchars( $_POST['url'] );
 $team	= htmlspecialchars( $_POST['team'] ?? '' );
+$transfermarkt = htmlspecialchars( $_POST['transfermarkt'] ?? '');
 
 /**
  * Setting global variables
@@ -34,7 +35,7 @@ $countSucessfulPushes 	= 0;
 $countFailedPushes 		= 0;
 
 //insert notification into DB
-$notificationId = $dbConnection->insert_notification( $title, $body, $url, $team );
+$notificationId = $dbConnection->insert_notification( $title, $body, $url, $team, $transfermarkt );
 
 //throw error if 
 Permission::cancel_if_unsuccessful( $notificationId );
@@ -43,7 +44,7 @@ Permission::cancel_if_unsuccessful( $notificationId );
 $payload = "{\"title\": \"$title\", \"body\": \"$body\", \"url\": \"$url\"}";
 
 //get subscriptions
-$subs = $dbConnection->get_subscriptions( $team );
+$subs = $dbConnection->get_subscriptions( $team, $transfermarkt );
 
 
 //send notification to all subscribers
