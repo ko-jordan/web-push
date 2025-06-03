@@ -100,7 +100,7 @@ class DBConnection extends \mysqli{
 
 		$team = $subscription['team'] ?? false;
 
-		$transfermarkt = $subscription['transfermarkt'] ?? false;
+		$transfermarkt = !empty($subscription['transfermarkt']) ? 1 : 0;
 
 		$entry = $this -> get_entry('subscriptions', compact( 'endpoint' ) )->fetch_assoc();
 
